@@ -1,212 +1,237 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Bayzat – Build your own bundle</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bayzat – Attendance Bundle</title>
 
-  <!-- 1 ️⃣  Tailwind CDN so we can use utility classes with zero tooling -->
+  <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- 2 ️⃣  Optional custom tweaks -->
+  <!-- Minor brand tweaks -->
   <style>
     body{font-family:Inter,system-ui,sans-serif}
-    /* soft brand gradient behind the whole page */
     body{background:linear-gradient(to bottom,#E8E6FF 0%,#ffffff 60%)}
-    /* subtle glass-morphism for the sticky invoice */
-    .glass{background:rgba(255,255,255,.7);backdrop-filter:blur(6px)}
+    .glass{background:rgba(255,255,255,.72);backdrop-filter:blur(6px)}
   </style>
 </head>
 <body class="text-slate-800 min-h-screen">
 
-  <!-- 🌅 HERO + GLOBAL CONTROLS -->
+  <!-- ╭─────────────────  HERO & GLOBAL CONTROLS  ─────────────────╮ -->
   <header class="max-w-6xl mx-auto px-4 py-10 text-center space-y-6">
-    <h1 class="text-4xl md:text-5xl font-semibold">Create your bundle</h1>
+    <h1 class="text-4xl md:text-5xl font-semibold">Configure Attendance</h1>
 
-    <!-- Billing cycle & employee controls -->
     <div class="flex flex-col md:flex-row items-center justify-center gap-4">
-
-      <!-- Billing pill -->
+      <!-- Billing cycle -->
       <div class="inline-flex bg-slate-100 rounded-full p-1">
         <button id="monthlyBtn" class="cycle-btn px-4 py-1 rounded-full text-sm">Monthly</button>
         <button id="annualBtn"  class="cycle-btn px-4 py-1 rounded-full text-sm">Annual</button>
       </div>
 
-      <!-- Employee slider / input -->
+      <!-- (Employee controls left in for future use) -->
       <div class="flex items-center gap-2 w-full md:w-[300px]">
-        <label class="shrink-0 text-sm font-medium">Employees</label>
-        <input id="empRange" type="range" min="1" max="500" value="50" class="w-full accent-indigo-600">
-        <input id="empInput" type="number" value="50" class="w-20 border rounded px-2 py-1 text-center text-sm">
+        <label class="text-sm font-medium shrink-0">Employees</label>
+        <input id="empRange" type="range" min="1" max="500" value="50"
+               class="w-full accent-indigo-600">
+        <input id="empInput" type="number" value="50"
+               class="w-20 border rounded px-2 py-1 text-sm text-center">
       </div>
     </div>
   </header>
 
-  <!-- 🔳 MAIN GRID -->
+  <!-- ╭─────────────────  MAIN GRID  ─────────────────╮ -->
   <main class="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-3 gap-8 pb-24">
 
-    <!-- LEFT: modules -->
-    <section id="modules" class="space-y-10 lg:col-span-2">
-      <!-- JS injects rows here -->
-    </section>
+    <!-- LEFT ▸ Attendance tiers -->
+    <section id="modules" class="space-y-10 lg:col-span-2"></section>
 
-    <!-- RIGHT: sticky invoice -->
+    <!-- RIGHT ▸ Sticky invoice -->
     <aside id="invoice"
            class="glass lg:col-span-1 sticky top-6 self-start rounded-xl shadow-md p-6 space-y-4">
       <h3 class="text-xl font-semibold">Your products</h3>
       <ul id="lineItems" class="divide-y text-sm"></ul>
       <hr>
-      <div id="subtotalRow"  class="flex justify-between text-sm"></div>
-      <div id="vatRow"       class="flex justify-between text-sm"></div>
-      <div id="totalRow"     class="flex justify-between text-lg font-semibold pt-2"></div>
+      <div id="subtotalRow" class="flex justify-between text-sm"></div>
+      <div id="vatRow"      class="flex justify-between text-sm"></div>
+      <div id="totalRow"    class="flex justify-between text-lg font-semibold pt-2"></div>
       <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-medium">
         Buy now
       </button>
     </aside>
   </main>
 
-  <!-- 🧠  ALL LOGIC IN ONE SMALL SCRIPT  ------------------------------------->
+  <!-- ╭─────────────────  LOGIC  ─────────────────╮ -->
   <script>
-/* ---------------------------------------------------------------------------
-  1.  CONFIG  – edit this array to add modules, tiers & prices
------------------------------------------------------------------------------*/
-const modules = [
-  {
-    key: "service_support",
-    title: "Service & Support",
-    tiers: [
-      { key:"bronze",  label:"Bronze",  priceAnnual:1350, priceMonthly:1350/12, blurb:"Basic onboarding & email support" },
-      { key:"silver",  label:"Silver",  priceAnnual:7400, priceMonthly:7400/12, blurb:"Enhanced onboarding & phone support" },
-      { key:"gold",    label:"Gold",    priceAnnual:3500, priceMonthly:3500/12, blurb:"Success manager & analytics" },
-      { key:"enterprise", label:"Enterprise", priceAnnual:0, priceMonthly:0, blurb:"Custom pricing" }
-    ]
-  },
-  {
-    key: "attendance",
-    title: "Attendance",
-    tiers: [
-      { key:"basic", label:"Basic",     priceAnnual:2400, priceMonthly:2400/12, blurb:"Clock-in app & reports" },
-      { key:"multisite", label:"MultiSite", priceAnnual:4800, priceMonthly:4800/12, blurb:"Multiple locations" },
-      { key:"advanced", label:"Advanced",  priceAnnual:9600, priceMonthly:9600/12, blurb:"Biometrics & overtime rules" },
-      { key:"enterprise", label:"Enterprise", priceAnnual:0, priceMonthly:0, blurb:"Custom pricing" }
-    ]
-  },
-  // 👉  Add Payroll, Talent, etc. the same way
-];
+/* ── 1. CONFIG (Attendance only) ────────────────────────────────────────── */
+const modules = [{
+  key: "attendance",
+  title: "Attendance",
+  tiers: [
+    {
+      key: "site",
+      label: "Site / Outlet Offices",
+      priceMonthly: 83.33,
+      priceAnnual: 83.33 * 12,
+      blurb: "Ideal for outlet offices / client-site projects",
+      qtyLabel: "No. of Site / Outlet offices"
+    },
+    {
+      key: "flexi",
+      label: "FlexiPlus",
+      priceMonthly: 166.67,
+      priceAnnual: 166.67 * 12,
+      blurb: "For mid-sized teams with multiple office locations",
+      qtyLabel: "No. of FlexiPlus offices"
+    },
+    {
+      key: "multisite",
+      label: "MultiSite",
+      priceMonthly: 566.67,
+      priceAnnual: 566.67 * 12,
+      blurb: "For companies with many offices and employees",
+      qtyLabel: "No. of MultiSite offices"
+    },
+    {
+      key: "enterprise",
+      label: "Enterprise",
+      priceMonthly: 0,
+      priceAnnual: 0,
+      blurb: "Custom pricing",
+      qtyLabel: null         // no input for custom pricing
+    }
+  ]
+}];
 
-/* ---------------------------------------------------------------------------
-  2.  DOM SHORTCUTS
------------------------------------------------------------------------------*/
-const $ = (sel) => document.querySelector(sel);
-const modulesEl   = $("#modules");
-const lineItemsEl = $("#lineItems");
-const subtotalEl  = $("#subtotalRow");
-const vatEl       = $("#vatRow");
-const totalEl     = $("#totalRow");
+/* ── 2. DOM refs ────────────────────────────────────────────────────────── */
+const $          = sel => document.querySelector(sel);
+const modulesEl  = $("#modules");
+const lineItems  = $("#lineItems");
+const subtotalEl = $("#subtotalRow");
+const vatEl      = $("#vatRow");
+const totalEl    = $("#totalRow");
 
-/* ---------------------------------------------------------------------------
-  3.  STATE
------------------------------------------------------------------------------*/
-let cycle       = "annual";      // "monthly" | "annual"
-let employees   = 50;
-let selections  = {};            // { moduleKey: tierKey }
+/* ── 3. STATE ───────────────────────────────────────────────────────────── */
+let cycle      = "annual";   // "monthly" | "annual"
+let selections = {};         // { attendance: "multisite" }
+let quantities = {};         // { attendance_multisite_qty: 1 }
 
-/* ---------------------------------------------------------------------------
-  4.  RENDER MODULE ROWS
------------------------------------------------------------------------------*/
-function renderModules(){
+/* ── 4. RENDER MODULES ──────────────────────────────────────────────────── */
+function renderModules () {
   modulesEl.innerHTML = "";
-  modules.forEach(mod=>{
-    const row = document.createElement("section");
-    row.innerHTML = `
-      <h2 class="text-lg font-semibold mb-3">${mod.title}</h2>
+  modules.forEach(mod => {
+    const selTier = selections[mod.key];
+
+    // tier buttons
+    const tierGrid = `
       <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        ${mod.tiers.map(tier=>`
+        ${mod.tiers.map(tier => `
           <button
             class="tier-btn border rounded-lg p-4 text-left transition shadow-sm hover:shadow-md
-                   ${selections[mod.key]===tier.key?'border-indigo-600 ring-2 ring-indigo-300':'border-slate-200'}"
+                   ${selTier === tier.key ? "border-indigo-600 ring-2 ring-indigo-300" : "border-slate-200"}"
             data-module="${mod.key}" data-tier="${tier.key}">
             <div class="flex items-center justify-between mb-2">
               <span class="font-medium">${tier.label}</span>
               <span class="w-4 h-4 rounded-full border
-                           ${selections[mod.key]===tier.key?'bg-indigo-600 border-indigo-600':'border-slate-400'}"></span>
+                        ${selTier === tier.key ? "bg-indigo-600 border-indigo-600" : "border-slate-400"}"></span>
             </div>
             <p class="text-indigo-600 font-semibold">
-              AED ${formatPrice(cycle==="annual"?tier.priceAnnual:tier.priceMonthly)}
+              AED ${format(cycle === "annual" ? tier.priceAnnual : tier.priceMonthly)}
             </p>
             <p class="text-xs mt-1 text-slate-600 leading-snug">${tier.blurb}</p>
           </button>
         `).join("")}
       </div>`;
-    modulesEl.appendChild(row);
+
+    // qty input (only for selected tier and when qtyLabel exists)
+    let qtyInput = "";
+    if (selTier) {
+      const tier = mod.tiers.find(t => t.key === selTier);
+      if (tier.qtyLabel) {
+        const qtyKey = `${mod.key}_${tier.key}_qty`;
+        if (quantities[qtyKey] === undefined) quantities[qtyKey] = 1;
+        qtyInput = `
+          <div class="mt-4">
+            <label class="text-sm font-medium mr-2">${tier.qtyLabel}</label>
+            <input type="number" min="1" step="1" value="${quantities[qtyKey]}"
+                   data-qty="${qtyKey}"
+                   class="qty-input w-24 border rounded px-2 py-1 text-sm text-center">
+          </div>`;
+      }
+    }
+
+    const sec = document.createElement("section");
+    sec.innerHTML = `<h2 class="text-lg font-semibold mb-3">${mod.title}</h2>${tierGrid}${qtyInput}`;
+    modulesEl.appendChild(sec);
   });
 }
 
-/* ---------------------------------------------------------------------------
-  5.  INVOICE CALC
------------------------------------------------------------------------------*/
-function recalcInvoice(){
-  lineItemsEl.innerHTML="";
-  let subtotal=0;
-  modules.forEach(mod=>{
-    const tierKey=selections[mod.key];
-    if(!tierKey) return;
-    const tier=mod.tiers.find(t=>t.key===tierKey);
-    const price=cycle==="annual"?tier.priceAnnual:tier.priceMonthly;
-    subtotal+=price;
+/* ── 5. INVOICE CALC ────────────────────────────────────────────────────── */
+function recalc () {
+  lineItems.innerHTML = "";
+  let subtotal = 0;
 
-    const li=document.createElement("li");
-    li.className="py-2 flex justify-between";
-    li.innerHTML=`<span>${mod.title} — ${tier.label}</span>
-                  <span class="font-medium">AED ${formatPrice(price)}</span>`;
-    lineItemsEl.appendChild(li);
+  modules.forEach(mod => {
+    const tierKey = selections[mod.key];
+    if (!tierKey) return;
+
+    const tier     = mod.tiers.find(t => t.key === tierKey);
+    const unit     = cycle === "annual" ? tier.priceAnnual : tier.priceMonthly;
+    const qtyKey   = `${mod.key}_${tierKey}_qty`;
+    const qty      = tier.qtyLabel ? (quantities[qtyKey] || 1) : 1;
+    const lineTotal = unit * qty;
+    subtotal += lineTotal;
+
+    const li = document.createElement("li");
+    li.className = "py-2 flex justify-between";
+    li.innerHTML = `<span>${mod.title} — ${tier.label} (x${qty})</span>
+                    <span class="font-medium">AED ${format(lineTotal)}</span>`;
+    lineItems.appendChild(li);
   });
-  const vat=subtotal*0.05;
-  const total=subtotal+vat;
-  subtotalEl.innerHTML=`<span>Subtotal</span><span>AED ${formatPrice(subtotal)}</span>`;
-  vatEl.innerHTML     =`<span>VAT (5%)</span><span>AED ${formatPrice(vat)}</span>`;
-  totalEl.innerHTML   =`<span>Total</span><span>AED ${formatPrice(total)}</span>`;
+
+  const vat   = subtotal * 0.05;
+  const total = subtotal + vat;
+  subtotalEl.innerHTML = `<span>Subtotal</span><span>AED ${format(subtotal)}</span>`;
+  vatEl.innerHTML      = `<span>VAT (5%)</span><span>AED ${format(vat)}</span>`;
+  totalEl.innerHTML    = `<span>Total</span><span>AED ${format(total)}</span>`;
 }
 
-/* ---------------------------------------------------------------------------
-  6.  HELPERS & EVENTS
------------------------------------------------------------------------------*/
-function formatPrice(n){return Math.round(n).toLocaleString();}
+/* ── 6. HELPERS & HANDLERS ──────────────────────────────────────────────── */
+const format = n => Math.round(n).toLocaleString();
 
-function setCycleButtons(){
-  document.querySelectorAll(".cycle-btn").forEach(btn=>{
-    const active = btn.id.startsWith(cycle);
-    btn.classList.toggle("bg-indigo-600",active);
-    btn.classList.toggle("text-white",active);
-    btn.classList.toggle("text-slate-600",!active);
-  });
-  recalcInvoice();
-}
-
-document.body.addEventListener("click",e=>{
-  const tierBtn=e.target.closest(".tier-btn");
-  if(tierBtn){
-    selections[tierBtn.dataset.module]=tierBtn.dataset.tier;
-    renderModules(); recalcInvoice(); return;
+document.body.addEventListener("click", e => {
+  // choose a tier
+  const btn = e.target.closest(".tier-btn");
+  if (btn) {
+    selections[btn.dataset.module] = btn.dataset.tier;
+    renderModules(); recalc(); return;
   }
-  if(e.target.id==="monthlyBtn"){cycle="monthly"; setCycleButtons();}
-  if(e.target.id==="annualBtn") {cycle="annual";  setCycleButtons();}
+  // billing cycle toggle
+  if (e.target.id === "monthlyBtn") { cycle = "monthly"; setCycleUI(); }
+  if (e.target.id === "annualBtn")  { cycle = "annual";  setCycleUI(); }
 });
 
-$("#empRange").addEventListener("input",e=>{
-  employees=Number(e.target.value);
-  $("#empInput").value=employees; // (placeholder – we’re not using employees yet)
-});
-$("#empInput").addEventListener("input",e=>{
-  employees=Number(e.target.value);
-  $("#empRange").value=employees;
+// qty edits
+document.body.addEventListener("input", e => {
+  if (e.target.matches(".qty-input")) {
+    quantities[e.target.dataset.qty] = Number(e.target.value) || 1;
+    recalc();
+  }
 });
 
-/* ---------------------------------------------------------------------------
-  7.  BOOTSTRAP
------------------------------------------------------------------------------*/
-setCycleButtons();
+function setCycleUI () {
+  document.querySelectorAll(".cycle-btn").forEach(b => {
+    const on = b.id.startsWith(cycle);
+    b.classList.toggle("bg-indigo-600", on);
+    b.classList.toggle("text-white", on);
+    b.classList.toggle("text-slate-600", !on);
+  });
+  recalc();
+}
+
+/* ── 7. BOOTSTRAP ───────────────────────────────────────────────────────── */
+setCycleUI();
 renderModules();
-recalcInvoice();
+recalc();
   </script>
 </body>
 </html>
