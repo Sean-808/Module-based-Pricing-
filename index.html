@@ -5,130 +5,137 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Bayzat Bundle Builder</title>
 
-  <!-- Tailwind — included inline so you don’t need a separate CSS file -->
+  <!-- Tailwind CDN for utility classes -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
-    /* ---- base card styles (already in your file) ---- */
-    body            {font-family:Inter,system-ui,sans-serif;background:#fbfbfe;}
-    .card           {border:1px solid #e2e8f0;border-radius:.75rem;padding:1rem;display:flex;flex-direction:column;transition:border-color .15s,box-shadow .15s;}
-    .card-active    {border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.35);}
-    .tick           {width:1rem;height:1rem;border:2px solid #94a3b8;border-radius:50%;}
-    .tick.active    {background:#6366f1;border-color:#6366f1;}
-    .module-card    {background:#fff;border:1px solid #e2e8f0;border-radius:1rem;padding:1.25rem;}
+  /* ---------- minimal custom styles ---------- */
+  body{font-family:Inter,system-ui,sans-serif;background:linear-gradient(to bottom,#E8E6FF 0%,#fff 60%);}
+  .glass{background:rgba(255,255,255,.75);backdrop-filter:blur(6px)}
+  .card-active{border-color:#6366f1!important;box-shadow:0 0 0 2px rgba(99,102,241,.35)}
+  .card-disabled{opacity:.4;pointer-events:none}
+  .disabled-input{background:#e5e7eb;pointer-events:none}
+  .module-card{background:#fff;border:1px solid #e2e8f0;border-radius:1rem;padding:1.5rem;transition:box-shadow .2s,border-color .2s;}
+  .module-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.06);border-color:#c7d2fe;}
   </style>
 </head>
-<body class="text-slate-800">
+<body class="text-slate-800 min-h-screen">
 
-  <!-- ── header / employee selector ─────────────────────────── -->
-  <header class="max-w-6xl mx-auto px-4 py-8 text-center space-y-5">
-    <h1 class="text-4xl font-bold">Create your bundle</h1>
-    <div class="inline-flex gap-4 items-center justify-center">
-      <label class="text-sm font-medium">Employees</label>
-      <input id="empInput" type="number" value="50" min="1" max="500" class="border p-2 rounded w-24 text-center" />
+<!-- ── Header: cycle toggle + employee selector ───────────── -->
+<header class="max-w-6xl mx-auto px-4 py-10 text-center space-y-6">
+  <h1 class="text-4xl md:text-5xl font-semibold">Create your bundle</h1>
+  <div class="flex flex-col md:flex-row items-center justify-center gap-4">
+    <div class="inline-flex bg-slate-100 rounded-full p-1">
+      <button id="monthlyBtn" class="cycle-btn px-4 py-1 rounded-full text-sm">Monthly</button>
+      <button id="annualBtn"  class="cycle-btn px-4 py-1 rounded-full text-sm">Annual</button>
     </div>
-  </header>
+    <div class="flex items-center gap-2 w-full md:w-[320px]">
+      <label class="text-sm font-medium shrink-0">Employees</label>
+      <input id="empRange" type="range" min="1" max="500" value="50" class="w-full accent-indigo-600">
+      <input id="empInput" type="number" value="50" class="w-20 border rounded px-2 py-1 text-sm text-center">
+    </div>
+  </div>
+</header>
 
-  <!-- where all module sections render -->
-  <section id="modules" class="max-w-6xl mx-auto px-4 space-y-10 mb-16"></section>
+<!-- ── Main layout: modules (left) + invoice (right) ───────── -->
+<main class="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-3 gap-8 pb-24">
+  <section id="modules" class="space-y-12 lg:col-span-2"></section>
 
-  <!-- ── JavaScript (also exactly as in your file) ───────────── -->
-  <script type="module">
-  /* ---------- icon map ---------- */
-  const icons = {
-    payroll:'https://cdn-icons-png.flaticon.com/512/4725/4725121.png',
-    timeoff:'https://cdn-icons-png.flaticon.com/512/2838/2838912.png',
-    attendance:'https://cdn-icons-png.flaticon.com/512/3105/3105773.png',
-    shift:'https://cdn-icons-png.flaticon.com/512/1490/1490711.png'
-  };
+  <aside id="invoice" class="glass lg:col-span-1 sticky top-6 self-start rounded-xl shadow-md p-6 space-y-4">
+    <h3 class="text-xl font-semibold">Your products</h3>
+    <ul id="lineItems" class="divide-y text-sm"></ul><hr>
+    <div id="subtotalRow" class="flex justify-between text-sm"></div>
+    <div id="vatRow"      class="flex justify-between text-sm"></div>
+    <div id="totalRow"    class="flex justify-between text-lg font-semibold pt-2"></div>
+  </aside>
+</main>
 
-  /* ---------- module definitions ---------- */
-  const modules = [
-    {key:'payroll',title:'Payroll',type:'radio',tiers:[
-      {key:'bronze',label:'Bronze',flatMonthly:375,flatAnnual:4500},
-      {key:'silver',label:'Silver',flatMonthly:750,flatAnnual:9000},
-      {key:'gold',label:'Gold',flatMonthly:1125,flatAnnual:13500},
-      {key:'enterprise',label:'Enterprise',flatMonthly:1625,flatAnnual:19500}
-    ]},
+<!-- ── Script ------------------------------------------------ -->
+<script>
+// ---------- Icons for headings ----------
+const icons={
+  payroll:'https://cdn-icons-png.flaticon.com/512/4725/4725121.png',
+  timeoff:'https://cdn-icons-png.flaticon.com/512/2838/2838912.png',
+  attendance:'https://cdn-icons-png.flaticon.com/512/3105/3105773.png',
+  shift:'https://cdn-icons-png.flaticon.com/512/1490/1490711.png',
+  support:'https://cdn-icons-png.flaticon.com/512/857/857681.png'
+};
 
-    {key:'timeoff',title:'Time Off',type:'radio',tiers:[
-      {key:'starter',label:'Starter',flatMonthly:375,flatAnnual:4500,cap:50},
-      {key:'growth',label:'Growth',flatMonthly:625,flatAnnual:7500,cap:100},
-      {key:'momentum',label:'Momentum',flatMonthly:875,flatAnnual:10500,cap:200},
-      {key:'enterprise',label:'Enterprise',flatMonthly:1250,flatAnnual:15000,cap:Infinity}
-    ]},
+// ---------- Module definitions ----------
+const modules=[
+ /* Payroll with tiered‐band calcs (orange shows annual↔monthly flat) */
+ {key:'payroll',title:'Payroll',type:'radio',multiplier:'employees',tiers:[
+   {key:'bronze',label:'Bronze',flatMonthly:375,flatAnnual:4500,blurb:'Process ≤ 275k / mo'},
+   {key:'silver',label:'Silver',flatMonthly:750, flatAnnual:9000,blurb:'Process ≤ 550k / mo'},
+   {key:'gold',  label:'Gold',   flatMonthly:1125,flatAnnual:13500,blurb:'Process ≤ 950k / mo'},
+   {key:'enterprise',label:'Enterprise',flatMonthly:1625,flatAnnual:19500,blurb:'Custom pricing'}]},
 
-    {key:'attendance',title:'Attendance',type:'quantity',tiers:[
-      {key:'site',label:'Site / Outlet',priceMonthly:83.33,priceAnnual:1000},
-      {key:'flexi',label:'FlexiPlus',priceMonthly:166.67,priceAnnual:2000},
-      {key:'multisite',label:'MultiSite',priceMonthly:566.67,priceAnnual:6800},
-      {key:'enterprise',label:'Enterprise',priceMonthly:null,priceAnnual:null}
-    ]},
+ /* Time Off   – flat per tier, auto‐jumps on employee caps */
+ {key:'timeoff',title:'Time Off',type:'radio',multiplier:'flat',tiers:[
+   {key:'starter',   label:'Starter',   flatMonthly:375, flatAnnual:4500,  cap:50, blurb:'Up to 50 employees'},
+   {key:'growth',    label:'Growth',    flatMonthly:625, flatAnnual:7500,  cap:100,blurb:'Up to 100 employees'},
+   {key:'momentum',  label:'Momentum',  flatMonthly:875, flatAnnual:10500, cap:200,blurb:'Up to 200 employees'},
+   {key:'enterprise',label:'Enterprise',flatMonthly:1250,flatAnnual:15000,cap:Infinity,blurb:'200+ employees'}]},
 
-    {key:'shift',title:'Shift Scheduling',type:'quantity',tiers:[
-      {key:'site',label:'Site / Outlet',priceMonthly:91.67,priceAnnual:1100},
-      {key:'flexi',label:'FlexiPlus',priceMonthly:208.33,priceAnnual:2500},
-      {key:'multisite',label:'MultiSite',priceMonthly:666.67,priceAnnual:8000},
-      {key:'enterprise',label:'Enterprise',priceMonthly:null,priceAnnual:null}
-    ]}
-  ];
+ /* Attendance (charged per office) */
+ {key:'attendance',title:'Attendance',type:'quantity',multiplier:'office',tiers:[
+   {key:'site',      label:'Site / Outlet Offices',priceMonthly:83.33, priceAnnual:1000, blurb:'Ideal for outlet offices / client site projects'},
+   {key:'flexi',     label:'FlexiPlus',            priceMonthly:166.67,priceAnnual:2000, blurb:'For mid-sized teams with multiple locations'},
+   {key:'multisite', label:'MultiSite',            priceMonthly:566.67,priceAnnual:6800, blurb:'For companies with many offices & employees'},
+   {key:'enterprise',label:'Enterprise',           priceMonthly:null,  priceAnnual:null,  blurb:'Large companies across multiple locations'}]},
 
-  /* ---------- helpers ---------- */
-  const $=s=>document.querySelector(s);
-  let emp=50,sels={},qtys={},cycle='monthly';
+ /* Shift Scheduling (exclusive with Attendance) */
+ {key:'shift',title:'Shift Scheduling (incl. Attendance)',type:'quantity',multiplier:'office',tiers:[
+   {key:'site',      label:'Site / Outlet Offices',priceMonthly:91.67,  priceAnnual:1100, blurb:'Ideal for outlet offices / client site projects'},
+   {key:'flexi',     label:'FlexiPlus',            priceMonthly:208.33, priceAnnual:2500, blurb:'For mid-sized teams with multiple locations'},
+   {key:'multisite', label:'MultiSite',            priceMonthly:666.67, priceAnnual:8000, blurb:'For companies with many offices & employees'},
+   {key:'enterprise',label:'Enterprise',           priceMonthly:null,   priceAnnual:null,  blurb:'Large companies across multiple locations'}]},
 
-  function autoTime(){
-    sels.timeoff = emp<=50?'starter':emp<=100?'growth':emp<=200?'momentum':'enterprise';
-  }
-  autoTime();
+ /* Service & Support */
+ {key:'support',title:'Service & Support',type:'radio',multiplier:'flat',tiers:[
+   {key:'bronze',    label:'Bronze',    flatMonthly:112.5, flatAnnual:1350, blurb:'Basic onboarding & email support'},
+   {key:'silver',    label:'Silver',    flatMonthly:616.7, flatAnnual:7400, blurb:'Enhanced onboarding & training'},
+   {key:'gold',      label:'Gold',      flatMonthly:291.7, flatAnnual:3500, blurb:'Success manager & monthly reviews'},
+   {key:'enterprise',label:'Enterprise',flatMonthly:null,  flatAnnual:null, blurb:'Custom pricing'}]}
+];
 
-  function fmt(n){return Math.round(n).toLocaleString();}
+// ---------- Payroll tiered bands ----------
+const payrollAnnualFlat={bronze:4500,silver:9000,gold:13500,enterprise:19500};
+const payrollBands={
+  bronze:{base:10,p1:37.5,t2:20,p2:18.75,t3:30,p3:7.5},
+  silver:{base:15,p1:50,t2:25,p2:17.5,t3:35,p3:7.5},
+  gold:{base:20,p1:56.25,t2:30,p2:14.06,t3:40,p3:5.63},
+  enterprise:{base:50,p1:32.5,t2:60,p2:6.5,t3:70,p3:3.25}
+};
+function payrollCost(tier,hc,annual){
+  const b=payrollBands[tier];if(!b)return 0;
+  const band1=Math.max(0,Math.min(hc,b.t2)-b.base);
+  const band2=Math.max(0,Math.min(hc,b.t3)-b.t2);
+  const band3=Math.max(0,hc-b.t3);
+  const flat=payrollAnnualFlat[tier]/12;
+  const monthly=flat+band1*b.p1+band2*b.p2+band3*b.p3;
+  return annual?monthly*12:monthly;
+}
 
-  /* ---------- build UI ---------- */
-  function build(){
-    const wrap=$("#modules");wrap.innerHTML='';
-    modules.forEach(m=>{
-      const sec=document.createElement('section');sec.className='module-card';
-      sec.innerHTML=`<div class="flex items-center gap-3 mb-4">
-        <img src="${icons[m.key]}" class="w-6 h-6" alt="">
-        <h2 class="text-xl font-semibold">${m.title}</h2></div>`;
-      const grid=document.createElement('div');grid.className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4';
+// ---------- state & helpers ----------
+const $=s=>document.querySelector(s);
+let cycle='annual',emp=50,sels={},qtys={};
+const fmt=n=>Math.round(n).toLocaleString();
+function shiftsSelected(){return Object.keys(qtys).some(k=>k.startsWith('shift_')&&qtys[k]>0);}
+function autoTime(){sels.timeoff=emp<=50?'starter':emp<=100?'growth':emp<=200?'momentum':'enterprise';}
 
-      m.tiers.forEach(t=>{
-        const sel = (m.type==='radio' && sels[m.key]===t.key) || (m.type==='quantity' && qtys[`${m.key}_${t.key}`]>0);
-        const price = m.key==='timeoff'
-            ? (cycle==='annual'?t.flatAnnual:t.flatMonthly)
-            : (cycle==='annual'?t.flatAnnual||t.priceAnnual:t.flatMonthly||t.priceMonthly);
-        const unit  = m.key==='timeoff' ? '' : (m.type==='quantity'?'per office':'flat');
-        const card=document.createElement('div');card.className='card'+(sel?' card-active':'');
-        card.dataset.module=m.key;card.dataset.tier=t.key;
-        card.innerHTML=`<div class="flex justify-between mb-2">
-            <span class="font-medium">${t.label}</span>
-            <span class="tick ${sel?'active':''}"></span></div>
-          <div class="text-indigo-600 font-bold text-lg">AED ${fmt(price)}</div>
-          <div class="text-xs text-slate-600">${unit}</div>`;
-        grid.appendChild(card);
-      });
-      sec.appendChild(grid); wrap.appendChild(sec);
-    });
-  }
-  build();
-
-  /* ---------- events ---------- */
-  $("#empInput").addEventListener('input',e=>{
-    emp = +e.target.value||1;
-    autoTime();
-    build();
-  });
-
-  document.body.addEventListener('click',e=>{
-    const c=e.target.closest('[data-module]'); if(!c) return;
-    const mKey=c.dataset.module,tKey=c.dataset.tier;
-    const m=modules.find(x=>x.key===mKey);
-    if(m.type==='radio'){ sels[mKey]=sels[mKey]===tKey?null:tKey; }
-    build();
-  });
-  </script>
-</body>
-</html>
+// ---------- build UI ----------
+function build(){
+  const modulesEl=document.getElementById('modules');modulesEl.innerHTML='';
+  const disableAttendance=shiftsSelected();
+  modules.forEach(m=>{
+    const sec=document.createElement('section');sec.className='module-card';
+    sec.innerHTML=`<div class="flex items-center gap-3 mb-3">
+      <img src="${icons[m.key]}" class="w-6 h-6"><h2 class="text-lg font-semibold">${m.title}</h2></div>`;
+    const grid=document.createElement('div');grid.className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4';
+    const qrow=document.createElement('div');qrow.className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-2';
+    m.tiers.forEach(t=>{
+      const isSelected = (m.type==='radio'&&sels[m.key]===t.key)||(m.type==='quantity'&&(qtys[`${m.key}_${t.key}`]||0)>0);
+      const card=document.createElement('div');card.dataset.module=m.key;card.dataset.tier=t.key;
+      card.className
   
